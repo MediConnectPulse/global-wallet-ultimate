@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Global Wallet",
+    "slug": "global-wallet",
+    "version": "10.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "globalwallet",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.globalwallet.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A192F",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "package": "com.globalwallet.app",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A192F"
+        }
+      ],
+      "expo-web-browser",
+      "expo-font"
+    ],
+    "experiments": {
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "66c90f84-a3d3-4918-92a9-6145e47e6de8"
+      }
+    }
+  }
+}

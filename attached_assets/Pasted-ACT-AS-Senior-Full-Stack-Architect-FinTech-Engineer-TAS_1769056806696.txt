@@ -1,0 +1,33 @@
+ACT AS: Senior Full-Stack Architect & FinTech Engineer.
+TASK: Complete the pending Supabase integration and build the "Global Wallet Ultimate" (V10.2) in one single, high-efficiency pass.
+1. DATABASE & AUTH (THE PENDING FIX):
+Connection: Initialize Supabase using SUPABASE_URL and SUPABASE_KEY from Replit Secrets.
+Custom Auth: Use a custom table-based Auth (supabase.from('users')). DO NOT use supabase.auth modules.
+Identity: Combine +91 and Mobile Number. Block self-referrals.
+Recovery Vault: Generate a unique 6-digit recovery_key on signup. Create a 'Forgot PIN' screen where inputting Mobile + Key allows an instant PIN reset. (Admin effort = 0).
+2. THE DUAL-INPUT LEDGER (LAYMAN READY):
+Theme: Executive Navy (#0A192F) and Gold (#FFD700) Gradient.
+Voice-AI: Pulsing Gold Mic. Parse "Category Amount" (e.g., "Food 200") using multi-language support. Auto-assign categories based on keywords (e.g., 'Chai' to 'Food').
+Manual Mode: Keyboard icon next to Mic for text entry.
+Sync: When an expense is added, edited, or deleted, the Red Card (Total Ledger Sum) must update simultaneously without a page refresh.
+3. THE "SMART VALVE" REVENUE LOGIC (CRITICAL):
+The Gate: Signup is FREE. Tier-1 and Tier-2 rewards ONLY move after the user pays the activation fee (simulate Razorpay/UPI success) and status becomes premium.
+The Valve: Check current_cycle_id (from global_settings).
+Tier-1: Paid automatically.
+Tier-2: LOCKED unless the user has referred 
+≥
+≥
+ 1 new paid person in the current cycle.
+Profit Logic: Tier-2 rewards from inactive users stay as Admin Profit.
+4. ADMIN GOD-MODE (MASTER CONTROL):
+Visible ONLY if is_admin == true.
+Remote UI: One-page form to edit Fee, Rewards, current_cycle_id, Logo URL, Brand Name, App Colors, and Policy Text.
+Intelligence Hub: Live math for Total Downloads, Active Premium Users, and Active Referrers this cycle.
+P&L Engine: (Premium Subs * Fee) - (Total Rewards Issued) = Net Profit. Net Profit must include T2 rewards saved from lazy users.
+Master Export: Button to share a formatted text summary of the user list or ledger.
+5. FINAL EXECUTION RULES:
+Use useEffect for all persistent data fetching. No mock data.
+Use Rupee (₹) symbol globally.
+Ensure "WhatsApp Share" for Premium users generates a beautifully formatted text report.
+Signup requires a mandatory "Disclaimer & T&C" checkbox.
+ACTION: Build all screens (Auth, Forget PIN, Home, Growth, Stats, Admin) and write the code into files immediately. I will provide the SUPABASE_URL and KEY in the secrets tab now
