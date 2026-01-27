@@ -1,570 +1,160 @@
-import React, { useState } from "react";
-import { StyleSheet, View, ScrollView, Pressable, Modal, Image } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import React, { useState, useEffect } from "react";
+import { StyleSheet, View, Text, Pressable, Alert, ScrollView, TextInput, Linking } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-import * as Haptics from "expo-haptics";
-
-import { ThemedText } from "@/components/ThemedText";
-import { GoldCard } from "@/components/GoldCard";
-import { GoldButton } from "@/components/GoldButton";
-import { useAuth } from "@/lib/auth";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
-
-type AdminStats = {
-  totalUsers: number;
-  premiumUsers: number;
-  freeUsers: number;
-  activeReferrers: number;
-  grossRevenue: number;
-  totalRewardsDistributed: number;
-  netRevenue: number;
-  topPerformers: Array<{
-    id: string;
-    mobile: string;
-    referralCount: number;
-  }>;
-};
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../lib/auth";
+import { supabase } from "../lib/supabase";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
-  const tabBarHeight = useBottomTabBarHeight();
   const { user, logout } = useAuth();
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [upiId, setUpiId] = useState(user?.upi_id || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { data: adminStats } = useQuery<AdminStats>({
-    queryKey: ["/api/admin/stats"],
-    enabled: !!user?.is_admin,
-  });
-
-  const handleLogout = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    logout();
-  };
-
-  const adminModules = [
-    { id: "download", name: "Download Stats", icon: "download", color: "#3B82F6" },
-    { id: "premium", name: "Premium Tracker", icon: "star", color: "#FFD700" },
-    { id: "referrers", name: "Active Referrers", icon: "users", color: "#10B981" },
-    { id: "pnl", name: "P&L Report", icon: "trending-up", color: "#8B5CF6" },
-    { id: "leaderboard", name: "Leaderboard", icon: "award", color: "#F59E0B" },
-    { id: "control", name: "Remote Control", icon: "settings", color: "#EF4444" },
-  ];
-
-  const openAdminModule = (moduleId: string) => {
-    setSelectedModule(moduleId);
-    setShowAdminModal(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  const renderAdminContent = () => {
-    switch (selectedModule) {
-      case "download":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Download Statistics</ThemedText>
-            <GoldCard style={styles.statCard}>
-              <View style={styles.statRow}>
-                <ThemedText style={styles.statLabel}>Total Users</ThemedText>
-                <ThemedText style={styles.statValue}>{adminStats?.totalUsers || 0}</ThemedText>
-              </View>
-              <View style={styles.statRow}>
-                <ThemedText style={styles.statLabel}>Premium Users</ThemedText>
-                <ThemedText style={[styles.statValue, { color: Colors.dark.gold }]}>
-                  {adminStats?.premiumUsers || 0}
-                </ThemedText>
-              </View>
-              <View style={styles.statRow}>
-                <ThemedText style={styles.statLabel}>Free Users</ThemedText>
-                <ThemedText style={styles.statValue}>{adminStats?.freeUsers || 0}</ThemedText>
-              </View>
-            </GoldCard>
-          </View>
-        );
-      case "premium":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Premium Tracker</ThemedText>
-            <GoldCard variant="gold" style={styles.premiumCard}>
-              <ThemedText style={styles.premiumLabel}>Premium Users</ThemedText>
-              <ThemedText style={styles.premiumCount}>{adminStats?.premiumUsers || 0}</ThemedText>
-              <ThemedText style={styles.premiumSubtext}>
-                {((adminStats?.premiumUsers || 0) / (adminStats?.totalUsers || 1) * 100).toFixed(1)}% conversion rate
-              </ThemedText>
-            </GoldCard>
-          </View>
-        );
-      case "referrers":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Active Referrers</ThemedText>
-            <GoldCard style={styles.statCard}>
-              <View style={styles.bigStat}>
-                <ThemedText style={styles.bigStatValue}>{adminStats?.activeReferrers || 0}</ThemedText>
-                <ThemedText style={styles.bigStatLabel}>Users with referrals</ThemedText>
-              </View>
-            </GoldCard>
-          </View>
-        );
-      case "pnl":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Profit & Loss</ThemedText>
-            <GoldCard style={styles.statCard}>
-              <View style={styles.statRow}>
-                <ThemedText style={styles.statLabel}>Gross Revenue</ThemedText>
-                <ThemedText style={[styles.statValue, { color: Colors.dark.success }]}>
-                  ₹{adminStats?.grossRevenue?.toLocaleString() || 0}
-                </ThemedText>
-              </View>
-              <View style={styles.statRow}>
-                <ThemedText style={styles.statLabel}>Rewards Distributed</ThemedText>
-                <ThemedText style={[styles.statValue, { color: Colors.dark.error }]}>
-                  -₹{adminStats?.totalRewardsDistributed?.toLocaleString() || 0}
-                </ThemedText>
-              </View>
-              <View style={[styles.statRow, styles.netRow]}>
-                <ThemedText style={styles.netLabel}>Net Revenue</ThemedText>
-                <ThemedText style={styles.netValue}>
-                  ₹{adminStats?.netRevenue?.toLocaleString() || 0}
-                </ThemedText>
-              </View>
-            </GoldCard>
-          </View>
-        );
-      case "leaderboard":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Top 3 Performers</ThemedText>
-            {adminStats?.topPerformers?.map((performer, index) => (
-              <GoldCard key={performer.id} style={styles.leaderCard}>
-                <View style={styles.leaderRow}>
-                  <View style={[styles.rankBadge, index === 0 && styles.goldRank, index === 1 && styles.silverRank, index === 2 && styles.bronzeRank]}>
-                    <ThemedText style={styles.rankText}>#{index + 1}</ThemedText>
-                  </View>
-                  <View style={styles.leaderInfo}>
-                    <ThemedText style={styles.leaderMobile}>{performer.mobile}</ThemedText>
-                    <ThemedText type="small" style={styles.leaderReferrals}>
-                      {performer.referralCount} premium referrals
-                    </ThemedText>
-                  </View>
-                  <Feather
-                    name={index === 0 ? "award" : "star"}
-                    size={24}
-                    color={index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : "#CD7F32"}
-                  />
-                </View>
-              </GoldCard>
-            )) || (
-              <ThemedText style={styles.noDataText}>No performers yet</ThemedText>
-            )}
-          </View>
-        );
-      case "control":
-        return (
-          <View>
-            <ThemedText type="h3" style={styles.modalTitle}>Remote Control</ThemedText>
-            <ThemedText style={styles.controlDesc}>
-              Admin controls for managing the platform remotely
-            </ThemedText>
-            <GoldButton variant="secondary" style={styles.controlBtn}>
-              Force Refresh All Users
-            </GoldButton>
-            <GoldButton variant="secondary" style={styles.controlBtn}>
-              Send Push Notification
-            </GoldButton>
-            <GoldButton variant="secondary" style={styles.controlBtn}>
-              Toggle Maintenance Mode
-            </GoldButton>
-          </View>
-        );
-      default:
-        return null;
+  // --- LOGIC: UPDATE USER IDENTITY (UPI FOR PAYOUTS) ---
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    const { error } = await supabase
+      .from('users')
+      .update({ upi_id: upiId })
+      .eq('id', user.id);
+    
+    if (!error) {
+      Alert.alert("Dignity Confirmed", "Your payout identity has been updated.");
+      setIsEditing(false);
     }
+    setLoading(false);
+  };
+
+  const requestWithdrawal = () => {
+    if (!user?.upi_id && !upiId) {
+        Alert.alert("Identity Missing", "Please save your UPI ID first to receive funds.");
+        return;
+    }
+    if (user.wallet_balance < 500) {
+        Alert.alert("Limit Not Met", "Minimum withdrawal threshold is ₹500.");
+        return;
+    }
+    Alert.alert("Request Sent", "Admin will verify and process ₹" + user.wallet_balance + " to your UPI.");
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: Colors.dark.backgroundRoot }]}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: headerHeight + Spacing.xl,
-          paddingBottom: tabBarHeight + Spacing.xl,
-          paddingHorizontal: Spacing.lg,
-        }}
-        scrollIndicatorInsets={{ bottom: insets.bottom }}
-      >
-        <GoldCard style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText style={styles.avatarText}>
-                {user?.mobile?.slice(-2) || "GW"}
-              </ThemedText>
-            </View>
-            {user?.is_premium ? (
-              <View style={styles.premiumBadge}>
-                <Feather name="star" size={12} color={Colors.dark.textInverse} />
-              </View>
-            ) : null}
+    <View style={styles.container}>
+      <LinearGradient colors={['#0A192F', '#02060C']} style={StyleSheet.absoluteFill} />
+      
+      <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingTop: insets.top + 20 }}>
+        
+        {/* 1. IDENTITY HEADER */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{user?.full_name?.charAt(0)}</Text>
           </View>
-          <ThemedText style={styles.mobile}>{user?.mobile || "User"}</ThemedText>
-          <View style={[styles.statusTag, user?.is_premium ? styles.premiumTag : styles.freeTag]}>
-            <ThemedText type="small" style={user?.is_premium ? styles.premiumTagText : styles.freeTagText}>
-              {user?.is_premium ? "Premium" : "Free"}
-            </ThemedText>
-          </View>
-        </GoldCard>
-
-        <ThemedText type="h4" style={styles.sectionTitle}>Account</ThemedText>
-
-        <GoldCard style={styles.menuCard}>
-          <Pressable style={styles.menuItem}>
-            <Feather name="user" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Edit Profile</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Feather name="shield" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Change PIN</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Feather name="key" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Recovery Key</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-        </GoldCard>
-
-        <ThemedText type="h4" style={styles.sectionTitle}>Preferences</ThemedText>
-
-        <GoldCard style={styles.menuCard}>
-          <Pressable style={styles.menuItem}>
-            <Feather name="bell" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Notifications</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Feather name="globe" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Language</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-        </GoldCard>
-
-        {user?.is_admin ? (
-          <>
-            <ThemedText type="h4" style={styles.sectionTitle}>
-              Admin Control Panel
-            </ThemedText>
-            <View style={styles.adminGrid}>
-              {adminModules.map((module) => (
-                <Pressable
-                  key={module.id}
-                  style={styles.adminModule}
-                  onPress={() => openAdminModule(module.id)}
-                >
-                  <View style={[styles.adminIcon, { backgroundColor: `${module.color}20` }]}>
-                    <Feather name={module.icon as any} size={24} color={module.color} />
-                  </View>
-                  <ThemedText type="small" style={styles.adminModuleName}>
-                    {module.name}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        ) : null}
-
-        <ThemedText type="h4" style={styles.sectionTitle}>Help</ThemedText>
-
-        <GoldCard style={styles.menuCard}>
-          <Pressable style={styles.menuItem}>
-            <Feather name="help-circle" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>FAQ</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Feather name="message-circle" size={20} color={Colors.dark.gold} />
-            <ThemedText style={styles.menuText}>Contact Support</ThemedText>
-            <Feather name="chevron-right" size={20} color={Colors.dark.textSecondary} />
-          </Pressable>
-        </GoldCard>
-
-        <GoldButton variant="outline" onPress={handleLogout} style={styles.logoutBtn}>
-          Logout
-        </GoldButton>
-
-        <ThemedText type="small" style={styles.version}>
-          Global Wallet v10.0.0
-        </ThemedText>
-      </ScrollView>
-
-      <Modal visible={showAdminModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom + Spacing.xl }]}>
-            <Pressable onPress={() => setShowAdminModal(false)} style={styles.closeBtn}>
-              <Feather name="x" size={24} color={Colors.dark.text} />
-            </Pressable>
-            {renderAdminContent()}
+          <Text style={styles.userName}>{user?.full_name?.toUpperCase()}</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{user?.subscription_status === 'premium' ? "⭐ PREMIUM MEMBER" : "FREE ACCOUNT"}</Text>
           </View>
         </View>
-      </Modal>
+
+        {/* 2. WEALTH LEDGER CARD */}
+        <View style={styles.wealthCard}>
+          <Text style={styles.cardLabel}>AVAILABLE FOR WITHDRAWAL</Text>
+          <Text style={styles.cardVal}>₹{user?.wallet_balance || 0}</Text>
+          <View style={styles.divider} />
+          <View style={styles.statsRow}>
+             <View>
+                <Text style={styles.miniLabel}>TOTAL EARNED</Text>
+                <Text style={styles.miniVal}>₹{user?.wallet_balance + (user?.total_withdrawn || 0)}</Text>
+             </View>
+             <View style={{alignItems: 'flex-end'}}>
+                <Text style={styles.miniLabel}>TOTAL WITHDRAWN</Text>
+                <Text style={styles.miniVal}>₹{user?.total_withdrawn || 0}</Text>
+             </View>
+          </View>
+          <Pressable style={[styles.withdrawBtn, {opacity: user?.wallet_balance < 500 ? 0.5 : 1}]} onPress={requestWithdrawal}>
+            <Text style={styles.withdrawBtnText}>REQUEST PAYOUT</Text>
+          </Pressable>
+        </View>
+
+        {/* 3. PAYOUT IDENTITY (UPI SETUP) */}
+        <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>💳 PAYOUT IDENTITY</Text>
+            <TextInput 
+                style={[styles.input, !isEditing && styles.inputDisabled]} 
+                value={upiId} 
+                onChangeText={setUpiId}
+                placeholder="Enter UPI ID (e.g. name@apl)"
+                placeholderTextColor="#444"
+                editable={isEditing}
+            />
+            {isEditing ? (
+                <Pressable style={styles.saveBtn} onPress={handleUpdateProfile}>
+                    <Text style={styles.saveBtnText}>{loading ? "SAVING..." : "CONFIRM IDENTITY"}</Text>
+                </Pressable>
+            ) : (
+                <Pressable style={styles.editBtn} onPress={() => setIsEditing(true)}>
+                    <Text style={styles.editBtnText}>EDIT UPI DETAILS</Text>
+                </Pressable>
+            )}
+        </View>
+
+        {/* 4. COMPLIANCE & LEGAL (PLAY STORE MANDATORY) */}
+        <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>🛡️ COMPLIANCE & LEGAL</Text>
+            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Disclaimer", "Wealth management involves risk. Rewards are promotional incentives.")}>
+                <Feather name="info" size={16} color="#FFD700" />
+                <Text style={styles.linkText}>View Disclaimer</Text>
+            </Pressable>
+            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Privacy", "We encrypt your mobile number and never share your ledger data.")}>
+                <Feather name="lock" size={16} color="#FFD700" />
+                <Text style={styles.linkText}>Data Privacy Policy</Text>
+            </Pressable>
+            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Terms", "One account per device. Self-referrals result in permanent ban.")}>
+                <Feather name="file-text" size={16} color="#FFD700" />
+                <Text style={styles.linkText}>Terms & Conditions</Text>
+            </Pressable>
+        </View>
+
+        <Pressable style={styles.logoutBtn} onPress={logout}>
+            <Feather name="log-out" size={18} color="white" />
+            <Text style={styles.logoutText}>LOGOUT FROM VAULT</Text>
+        </Pressable>
+
+        <Text style={styles.versionText}>Global Wallet Sovereign • v1.0.24</Text>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  profileCard: {
-    alignItems: "center",
-    paddingVertical: Spacing["2xl"],
-    marginBottom: Spacing.xl,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: Spacing.md,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.dark.gold,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: Colors.dark.textInverse,
-  },
-  premiumBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.gold,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: Colors.dark.backgroundDefault,
-  },
-  mobile: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.dark.text,
-    marginBottom: Spacing.sm,
-  },
-  statusTag: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
-  },
-  premiumTag: {
-    backgroundColor: "rgba(255, 215, 0, 0.2)",
-  },
-  freeTag: {
-    backgroundColor: "rgba(148, 163, 184, 0.2)",
-  },
-  premiumTagText: {
-    color: Colors.dark.gold,
-    fontWeight: "600",
-  },
-  freeTagText: {
-    color: Colors.dark.textSecondary,
-  },
-  sectionTitle: {
-    marginBottom: Spacing.md,
-    color: Colors.dark.text,
-  },
-  menuCard: {
-    marginBottom: Spacing.xl,
-    padding: 0,
-    overflow: "hidden",
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderMuted,
-  },
-  menuText: {
-    flex: 1,
-    marginLeft: Spacing.md,
-    color: Colors.dark.text,
-  },
-  adminGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  adminModule: {
-    width: "31%",
-    backgroundColor: Colors.dark.backgroundDefault,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.dark.borderMuted,
-  },
-  adminIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.sm,
-  },
-  adminModuleName: {
-    color: Colors.dark.text,
-    textAlign: "center",
-    fontSize: 11,
-  },
-  logoutBtn: {
-    marginBottom: Spacing.lg,
-  },
-  version: {
-    textAlign: "center",
-    color: Colors.dark.textSecondary,
-    marginBottom: Spacing.xl,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: Colors.dark.backgroundRoot,
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    minHeight: 300,
-  },
-  closeBtn: {
-    alignSelf: "flex-end",
-    marginBottom: Spacing.lg,
-  },
-  modalTitle: {
-    color: Colors.dark.text,
-    marginBottom: Spacing.xl,
-  },
-  statCard: {
-    marginBottom: Spacing.lg,
-  },
-  statRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.borderMuted,
-  },
-  statLabel: {
-    color: Colors.dark.textSecondary,
-  },
-  statValue: {
-    color: Colors.dark.text,
-    fontWeight: "600",
-  },
-  netRow: {
-    borderBottomWidth: 0,
-    marginTop: Spacing.sm,
-    paddingTop: Spacing.md,
-    borderTopWidth: 2,
-    borderTopColor: Colors.dark.gold,
-  },
-  netLabel: {
-    color: Colors.dark.text,
-    fontWeight: "600",
-  },
-  netValue: {
-    color: Colors.dark.gold,
-    fontWeight: "700",
-    fontSize: 18,
-  },
-  premiumCard: {
-    alignItems: "center",
-    paddingVertical: Spacing["2xl"],
-  },
-  premiumLabel: {
-    color: Colors.dark.textInverse,
-    opacity: 0.7,
-  },
-  premiumCount: {
-    fontSize: 48,
-    fontWeight: "700",
-    color: Colors.dark.textInverse,
-  },
-  premiumSubtext: {
-    color: Colors.dark.textInverse,
-    opacity: 0.7,
-  },
-  bigStat: {
-    alignItems: "center",
-    paddingVertical: Spacing.lg,
-  },
-  bigStatValue: {
-    fontSize: 48,
-    fontWeight: "700",
-    color: Colors.dark.success,
-  },
-  bigStatLabel: {
-    color: Colors.dark.textSecondary,
-  },
-  leaderCard: {
-    marginBottom: Spacing.md,
-  },
-  leaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  rankBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.md,
-    backgroundColor: Colors.dark.backgroundSecondary,
-  },
-  goldRank: {
-    backgroundColor: "#FFD700",
-  },
-  silverRank: {
-    backgroundColor: "#C0C0C0",
-  },
-  bronzeRank: {
-    backgroundColor: "#CD7F32",
-  },
-  rankText: {
-    fontWeight: "700",
-    color: Colors.dark.textInverse,
-  },
-  leaderInfo: {
-    flex: 1,
-  },
-  leaderMobile: {
-    fontWeight: "600",
-    color: Colors.dark.text,
-  },
-  leaderReferrals: {
-    color: Colors.dark.textSecondary,
-  },
-  noDataText: {
-    color: Colors.dark.textSecondary,
-    textAlign: "center",
-  },
-  controlDesc: {
-    color: Colors.dark.textSecondary,
-    marginBottom: Spacing.xl,
-  },
-  controlBtn: {
-    marginBottom: Spacing.md,
-  },
+  container: { flex: 1 },
+  profileHeader: { alignItems: 'center', marginBottom: 30 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFD700', justifyContent: 'center', alignItems: 'center', marginBottom: 15, elevation: 10 },
+  avatarText: { fontSize: 32, fontWeight: 'bold', color: '#0A192F' },
+  userName: { color: 'white', fontSize: 20, fontWeight: '900', letterSpacing: 1 },
+  badge: { backgroundColor: 'rgba(255,215,0,0.1)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)' },
+  badgeText: { color: '#FFD700', fontSize: 9, fontWeight: 'bold' },
+  wealthCard: { backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: 20, borderRadius: 30, padding: 25, borderWidth: 1, borderColor: 'rgba(255,215,0,0.1)' },
+  cardLabel: { color: '#FFD700', fontSize: 9, fontWeight: 'bold', opacity: 0.6, textAlign: 'center' },
+  cardVal: { color: 'white', fontSize: 36, fontWeight: '900', textAlign: 'center', marginVertical: 10 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginVertical: 15 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  miniLabel: { color: 'white', opacity: 0.4, fontSize: 8, fontWeight: 'bold' },
+  miniVal: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
+  withdrawBtn: { backgroundColor: '#FFD700', padding: 18, borderRadius: 15, alignItems: 'center' },
+  withdrawBtnText: { color: 'black', fontWeight: '900', fontSize: 13 },
+  sectionCard: { backgroundColor: 'rgba(255,255,255,0.02)', marginHorizontal: 20, marginTop: 20, borderRadius: 20, padding: 20 },
+  sectionTitle: { color: '#FFD700', fontSize: 10, fontWeight: 'bold', marginBottom: 15, opacity: 0.7 },
+  input: { backgroundColor: 'rgba(0,0,0,0.2)', color: 'white', padding: 15, borderRadius: 12, fontSize: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  inputDisabled: { opacity: 0.5 },
+  editBtn: { alignSelf: 'flex-end', marginTop: 10 },
+  editBtnText: { color: '#FFD700', fontSize: 11, fontWeight: 'bold' },
+  saveBtn: { backgroundColor: '#1B4D3E', padding: 12, borderRadius: 10, marginTop: 15, alignItems: 'center' },
+  saveBtnText: { color: '#00FF00', fontSize: 11, fontWeight: 'bold' },
+  linkRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 12 },
+  linkText: { color: 'white', fontSize: 13, opacity: 0.8 },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 30, marginBottom: 10 },
+  logoutText: { color: 'white', fontWeight: 'bold', fontSize: 12, opacity: 0.6 },
+  versionText: { textAlign: 'center', color: '#444', fontSize: 9, marginBottom: 50 }
 });
