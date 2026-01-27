@@ -8,7 +8,7 @@ import { useAuth } from "../lib/auth";
 import DashboardScreen from "../screens/DashboardScreen";
 import ReferralsScreen from "../screens/ReferralsScreen";
 import AdminScreen from "../screens/AdminScreen";
-import ReportsScreen from "../screens/ReportsScreen";
+import ProfileScreen from "../screens/ProfileScreen"; // FIXED: Points to the Compliance/Withdrawal screen
 
 const Tab = createBottomTabNavigator();
 
@@ -26,8 +26,8 @@ export default function MainTabNavigator() {
           backgroundColor: "#0A192F",
           borderTopWidth: 0,
           // --- DIGNITY ELEVATION: LIFTS ICONS ABOVE SYSTEM BUTTONS ---
-          height: 70 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          height: 75 + insets.bottom, 
+          paddingBottom: insets.bottom + 10,
           paddingTop: 10,
           elevation: 0,
           shadowOpacity: 0,
@@ -59,7 +59,7 @@ export default function MainTabNavigator() {
       />
       <Tab.Screen
         name="PROFILE"
-        component={ReportsScreen}
+        component={ProfileScreen} // FIXED: Component changed from Reports to Profile
         options={{
           tabBarIcon: ({ color }) => (
             <Feather name="user" size={22} color={color} />
