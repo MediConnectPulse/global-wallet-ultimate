@@ -5,125 +5,42 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
-
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
-  const [upiId, setUpiId] = useState(user?.upi_id || "");
+  const { user, setUser, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ ...user });
 
-  // --- LOGIC: UPDATE USER IDENTITY (UPI FOR PAYOUTS) ---
-  const handleUpdateProfile = async () => {
-    setLoading(true);
-    const { error } = await supabase
-      .from('users')
-      .update({ upi_id: upiId })
-      .eq('id', user.id);
-    
+  const handleUpdate = async () => {
+    if (!isEditing) return setIsEditing(true);
+    const { error } = await supabase.from('users').update(formData).eq('id', user.id);
     if (!error) {
-      Alert.alert("Dignity Confirmed", "Your payout identity has been updated.");
+      Alert.alert("Dignity Restored", "Your personal vault has been updated.");
       setIsEditing(false);
     }
-    setLoading(false);
-  };
-
-  const requestWithdrawal = () => {
-    if (!user?.upi_id && !upiId) {
-        Alert.alert("Identity Missing", "Please save your UPI ID first to receive funds.");
-        return;
-    }
-    if (user.wallet_balance < 500) {
-        Alert.alert("Limit Not Met", "Minimum withdrawal threshold is ₹500.");
-        return;
-    }
-    Alert.alert("Request Sent", "Admin will verify and process ₹" + user.wallet_balance + " to your UPI.");
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#0A192F', '#02060C']} style={StyleSheet.absoluteFill} />
-      
-      <ScrollView contentContainerStyle={{ paddingBottom: 100, paddingTop: insets.top + 20 }}>
+    <ScrollView style={{backgroundColor: '#0A192F'}}>
+      <LinearGradient colors={['#1B4D3E', '#0A2E24']} style={styles.withdrawCard}>
+         <Text style={styles.label}>PASSIVE BALANCE</Text>
+         <Text style={styles.val}>₹{user.wallet_balance}</Text>
+         <Pressable style={styles.btn} onPress={() => Alert.alert("Request Sent", "Admin will verify.")}><Text>REQUEST PAYOUT</Text></Pressable>
+      </LinearGradient>
+
+      <View style={styles.dataVault}>
+        <Text style={styles.sectionTitle}>📋 PERSONAL & BANKING DATA</Text>
+        <TextInput style={styles.input} value={formData.full_name} editable={isEditing} onChangeText={(t) => setFormData({...formData, full_name: t})} placeholder="Name" />
+        <TextInput style={styles.input} value={String(formData.age)} editable={isEditing} onChangeText={(t) => setFormData({...formData, age: t})} placeholder="Age" keyboardType="numeric" />
+        <TextInput style={styles.input} value={formData.bank_name} editable={isEditing} onChangeText={(t) => setFormData({...formData, bank_name: t})} placeholder="Bank Name" />
+        <TextInput style={styles.input} value={formData.ifsc_code} editable={isEditing} onChangeText={(t) => setFormData({...formData, ifsc_code: t})} placeholder="IFSC Code" />
         
-        {/* 1. IDENTITY HEADER */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.full_name?.charAt(0)}</Text>
-          </View>
-          <Text style={styles.userName}>{user?.full_name?.toUpperCase()}</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{user?.subscription_status === 'premium' ? "⭐ PREMIUM MEMBER" : "FREE ACCOUNT"}</Text>
-          </View>
-        </View>
-
-        {/* 2. WEALTH LEDGER CARD */}
-        <View style={styles.wealthCard}>
-          <Text style={styles.cardLabel}>AVAILABLE FOR WITHDRAWAL</Text>
-          <Text style={styles.cardVal}>₹{user?.wallet_balance || 0}</Text>
-          <View style={styles.divider} />
-          <View style={styles.statsRow}>
-             <View>
-                <Text style={styles.miniLabel}>TOTAL EARNED</Text>
-                <Text style={styles.miniVal}>₹{user?.wallet_balance + (user?.total_withdrawn || 0)}</Text>
-             </View>
-             <View style={{alignItems: 'flex-end'}}>
-                <Text style={styles.miniLabel}>TOTAL WITHDRAWN</Text>
-                <Text style={styles.miniVal}>₹{user?.total_withdrawn || 0}</Text>
-             </View>
-          </View>
-          <Pressable style={[styles.withdrawBtn, {opacity: user?.wallet_balance < 500 ? 0.5 : 1}]} onPress={requestWithdrawal}>
-            <Text style={styles.withdrawBtnText}>REQUEST PAYOUT</Text>
-          </Pressable>
-        </View>
-
-        {/* 3. PAYOUT IDENTITY (UPI SETUP) */}
-        <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>💳 PAYOUT IDENTITY</Text>
-            <TextInput 
-                style={[styles.input, !isEditing && styles.inputDisabled]} 
-                value={upiId} 
-                onChangeText={setUpiId}
-                placeholder="Enter UPI ID (e.g. name@apl)"
-                placeholderTextColor="#444"
-                editable={isEditing}
-            />
-            {isEditing ? (
-                <Pressable style={styles.saveBtn} onPress={handleUpdateProfile}>
-                    <Text style={styles.saveBtnText}>{loading ? "SAVING..." : "CONFIRM IDENTITY"}</Text>
-                </Pressable>
-            ) : (
-                <Pressable style={styles.editBtn} onPress={() => setIsEditing(true)}>
-                    <Text style={styles.editBtnText}>EDIT UPI DETAILS</Text>
-                </Pressable>
-            )}
-        </View>
-
-        {/* 4. COMPLIANCE & LEGAL (PLAY STORE MANDATORY) */}
-        <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>🛡️ COMPLIANCE & LEGAL</Text>
-            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Disclaimer", "Wealth management involves risk. Rewards are promotional incentives.")}>
-                <Feather name="info" size={16} color="#FFD700" />
-                <Text style={styles.linkText}>View Disclaimer</Text>
-            </Pressable>
-            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Privacy", "We encrypt your mobile number and never share your ledger data.")}>
-                <Feather name="lock" size={16} color="#FFD700" />
-                <Text style={styles.linkText}>Data Privacy Policy</Text>
-            </Pressable>
-            <Pressable style={styles.linkRow} onPress={() => Alert.alert("Terms", "One account per device. Self-referrals result in permanent ban.")}>
-                <Feather name="file-text" size={16} color="#FFD700" />
-                <Text style={styles.linkText}>Terms & Conditions</Text>
-            </Pressable>
-        </View>
-
-        <Pressable style={styles.logoutBtn} onPress={logout}>
-            <Feather name="log-out" size={18} color="white" />
-            <Text style={styles.logoutText}>LOGOUT FROM VAULT</Text>
+        <Pressable style={styles.masterUpdateBtn} onPress={handleUpdate}>
+          <Text style={{fontWeight: 'bold'}}>{isEditing ? "SAVE TO VAULT" : "UPDATE PROFILE"}</Text>
         </Pressable>
 
-        <Text style={styles.versionText}>Global Wallet Sovereign • v1.0.24</Text>
-      </ScrollView>
-    </View>
+        <Pressable onPress={logout} style={{marginTop: 30}}><Text style={{color: 'red', textAlign: 'center'}}>LOGOUT</Text></Pressable>
+      </View>
+    </ScrollView>
   );
 }
 
