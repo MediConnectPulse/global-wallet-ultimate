@@ -67,18 +67,16 @@ export default function MainTabNavigator() {
         }}
       />
 
-      {/* GOD-MODE: Only visible to Admin */}
-      {user?.is_admin && (
-        <Tab.Screen
-          name="ADMIN"
-          component={AdminScreen}
-          options={{
-            tabBarIcon: ({ color }) => (
-              <Feather name="shield" size={22} color={color} />
-            ),
-          }}
-        />
-      )}
+    {/* 🛡️ MASTER SECURITY GATE: Icon strictly invisible to standard users */}
+{user?.is_admin === true && (
+  <Tab.Screen 
+    name="ADMIN" 
+    component={AdminScreen} 
+    options={{ 
+      tabBarIcon: ({color}) => <Feather name="shield" size={22} color={color}/> 
+    }} 
+  />
+)} 
     </Tab.Navigator>
   );
 }
