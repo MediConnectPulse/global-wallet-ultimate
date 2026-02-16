@@ -20,7 +20,7 @@ import { GoldButton } from "@/components/GoldButton";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors, Spacing, BorderRadius, Gradients } from "@/constants/theme";
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, setUser, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -59,28 +59,14 @@ export default function ProfileScreen() {
   };
 
   const handleWithdrawal = () => {
-    if (user?.wallet_balance < 500) {
+    if (user?.wallet_balance < 100) {
       Alert.alert(
         "Insufficient Balance",
-        "Minimum withdrawal amount is ₹500. Keep earning to reach the threshold!"
+        "Minimum withdrawal amount is ₹100. Keep earning to reach the threshold!"
       );
       return;
     }
-
-    Alert.alert(
-      "Withdrawal Request",
-      `Request to withdraw ₹${user?.wallet_balance}?\n\nAdmin will verify your bank details and process the payment.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm",
-          onPress: () => {
-            Alert.alert("Request Submitted", "Your withdrawal request has been sent to admin for processing.");
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
-    );
+    navigation.navigate("Withdrawal");
   };
 
   const totalLifetimeEarnings =
@@ -153,13 +139,13 @@ export default function ProfileScreen() {
                   ₹{user?.wallet_balance || 0}
                 </ThemedText>
                 <ThemedText type="caption" style={styles.withdrawalSubtext}>
-                  Min. withdrawal: ₹500
+                  Min. withdrawal: ₹100
                 </ThemedText>
               </View>
               <GoldButton
                 onPress={handleWithdrawal}
                 icon="download"
-                disabled={user?.wallet_balance < 500}
+                disabled={user?.wallet_balance < 100}
                 variant="primary"
                 style={styles.withdrawButton}
               >
@@ -279,6 +265,94 @@ export default function ProfileScreen() {
               Save Changes
             </GoldButton>
           )}
+
+          <ThemedText type="h5" style={styles.sectionTitle}>
+            Quick Actions
+          </ThemedText>
+
+          <GlassCard style={styles.actionsCard} variant="medium">
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("Payment");
+              }}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: `${Colors.dark.successGreen}20` }]}>
+                <Feather name="plus-circle" size={20} color={Colors.dark.successGreen} />
+              </View>
+              <View style={styles.actionContent}>
+                <ThemedText type="subtitle" style={styles.actionTitle}>Add Funds</ThemedText>
+                <ThemedText type="caption" style={styles.actionSubtitle}>Top up your wallet</ThemedText>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.dark.textTertiary} />
+            </Pressable>
+
+            <View style={styles.actionDivider} />
+
+            <Pressable
+              style={styles.actionButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("Notifications");
+              }}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: `${Colors.gold}20` }]}>
+                <Feather name="bell" size={20} color={Colors.gold} />
+              </View>
+              <View style={styles.actionContent}>
+                <ThemedText type="subtitle" style={styles.actionTitle}>Notifications</ThemedText>
+                <ThemedText type="caption" style={styles.actionSubtitle}>View all updates</ThemedText>
+              </View>
+              <Feather name="chevron-right" size={16} color={Colors.dark.textTertiary} />
+            </Pressable>
+          </GlassCard>
+
+          <ThemedText type="h5" style={styles.sectionTitle}>
+            Legal & Privacy
+          </ThemedText>
+
+          <GlassCard style={styles.legalCard} variant="medium">
+            <Pressable
+              style={styles.legalButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("PrivacyPolicy");
+              }}
+            >
+              <Feather name="shield" size={18} color={Colors.dark.textSecondary} />
+              <ThemedText type="small" style={styles.legalText}>Privacy Policy</ThemedText>
+              <Feather name="chevron-right" size={16} color={Colors.dark.textTertiary} />
+            </Pressable>
+
+            <View style={styles.legalDivider} />
+
+            <Pressable
+              style={styles.legalButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("TermsOfService");
+              }}
+            >
+              <Feather name="file-text" size={18} color={Colors.dark.textSecondary} />
+              <ThemedText type="small" style={styles.legalText}>Terms of Service</ThemedText>
+              <Feather name="chevron-right" size={16} color={Colors.dark.textTertiary} />
+            </Pressable>
+
+            <View style={styles.legalDivider} />
+
+            <Pressable
+              style={[styles.legalButton, styles.dangerButton]}
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                navigation.navigate("AccountDeletion");
+              }}
+            >
+              <Feather name="trash-2" size={18} color={Colors.dark.errorRed} />
+              <ThemedText type="small" style={[styles.legalText, styles.dangerText]}>Delete Account</ThemedText>
+              <Feather name="chevron-right" size={16} color={Colors.dark.errorRed} />
+            </Pressable>
+          </GlassCard>
 
           <Pressable onPress={logout} style={styles.logoutButton}>
             <Feather name="log-out" size={16} color={Colors.dark.errorRed} />
@@ -513,5 +587,59 @@ const styles = StyleSheet.create({
   logoutText: {
     color: Colors.dark.errorRed,
     fontWeight: "600",
+  },
+  actionsCard: {
+    marginBottom: Spacing.xl,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    color: Colors.dark.text,
+    marginBottom: Spacing.xs,
+  },
+  actionSubtitle: {
+    color: Colors.dark.textSecondary,
+  },
+  actionDivider: {
+    height: 1,
+    backgroundColor: Colors.dark.glassBorder,
+    marginVertical: Spacing.xs,
+  },
+  legalCard: {
+    marginBottom: Spacing.xl,
+  },
+  legalButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  legalText: {
+    color: Colors.dark.textSecondary,
+    flex: 1,
+  },
+  legalDivider: {
+    height: 1,
+    backgroundColor: Colors.dark.glassBorder,
+  },
+  dangerButton: {
+    marginTop: Spacing.sm,
+  },
+  dangerText: {
+    color: Colors.dark.errorRed,
   },
 });

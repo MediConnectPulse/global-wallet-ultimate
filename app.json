@@ -2,7 +2,7 @@
   "expo": {
     "name": "Global Wallet",
     "slug": "global-wallet",
-    "version": "10.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "globalwallet",
@@ -19,7 +19,16 @@
       },
       "package": "com.globalwallet.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "output": "single",
@@ -48,7 +57,10 @@
     "extra": {
       "eas": {
         "projectId": "66c90f84-a3d3-4918-92a9-6145e47e6de8"
-      }
-    }
+      },
+      "SUPABASE_URL": "${SUPABASE_URL}",
+      "SUPABASE_KEY": "${SUPABASE_KEY}"
+    },
+    "owner": "globalwallet"
   }
 }
