@@ -15,7 +15,13 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Colors, Spacing, BorderRadius, SpringConfigs, AnimationDuration } from "@/constants/theme";
+import {
+  Colors,
+  Spacing,
+  BorderRadius,
+  SpringConfigs,
+  AnimationDuration,
+} from "@/constants/theme";
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -168,7 +174,12 @@ export function Toast({
           ]}
         >
           <View style={styles.content}>
-            <View style={[styles.iconContainer, { backgroundColor: `${getBorderColor()}20` }]}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: `${getBorderColor()}20` },
+              ]}
+            >
               <Feather name={getIcon()} size={20} color={getBorderColor()} />
             </View>
 
@@ -179,14 +190,24 @@ export function Toast({
             </View>
 
             {actionLabel && onAction && (
-              <AnimatedPressable onPress={handleAction} style={styles.actionButton}>
-                <ThemedText type="smallMedium" style={[styles.actionText, { color: getBorderColor() }]}>
+              <AnimatedPressable
+                onPress={handleAction}
+                style={styles.actionButton}
+              >
+                <ThemedText
+                  type="smallMedium"
+                  style={[styles.actionText, { color: getBorderColor() }]}
+                >
                   {actionLabel}
                 </ThemedText>
               </AnimatedPressable>
             )}
 
-            <AnimatedPressable onPress={handleDismiss} style={styles.dismissButton} hitSlop={8}>
+            <AnimatedPressable
+              onPress={handleDismiss}
+              style={styles.dismissButton}
+              hitSlop={8}
+            >
               <Feather name="x" size={18} color={Colors.dark.textSecondary} />
             </AnimatedPressable>
           </View>

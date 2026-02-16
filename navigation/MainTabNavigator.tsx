@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, View, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
@@ -11,10 +12,58 @@ import DashboardScreen from "../screens/DashboardScreen";
 import ReferralsScreen from "../screens/ReferralsScreen";
 import AdminScreen from "../screens/AdminScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import PaymentScreen from "../screens/PaymentScreen";
+import WithdrawalScreen from "../screens/WithdrawalScreen";
+import NotificationScreen from "../screens/NotificationScreen";
+import PrivacyPolicyScreen from "../screens/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "../screens/TermsOfServiceScreen";
+import AccountDeletionScreen from "../screens/AccountDeletionScreen";
 
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 const Tab = createBottomTabNavigator();
+const HomeStack = createNativeStackNavigator();
+const GrowthStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
+const AdminStack = createNativeStackNavigator();
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Dashboard" component={DashboardScreen} />
+    </HomeStack.Navigator>
+  );
+}
+
+function GrowthStackNavigator() {
+  return (
+    <GrowthStack.Navigator screenOptions={{ headerShown: false }}>
+      <GrowthStack.Screen name="Referrals" component={ReferralsScreen} />
+    </GrowthStack.Navigator>
+  );
+}
+
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} />
+      <ProfileStack.Screen name="Payment" component={PaymentScreen} />
+      <ProfileStack.Screen name="Withdrawal" component={WithdrawalScreen} />
+      <ProfileStack.Screen name="Notifications" component={NotificationScreen} />
+      <ProfileStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <ProfileStack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+      <ProfileStack.Screen name="AccountDeletion" component={AccountDeletionScreen} />
+    </ProfileStack.Navigator>
+  );
+}
+
+function AdminStackNavigator() {
+  return (
+    <AdminStack.Navigator screenOptions={{ headerShown: false }}>
+      <AdminStack.Screen name="AdminPanel" component={AdminScreen} />
+    </AdminStack.Navigator>
+  );
+}
 
 export default function MainTabNavigator() {
   const insets = useSafeAreaInsets();
@@ -61,7 +110,7 @@ export default function MainTabNavigator() {
     >
       <Tab.Screen
         name="HOME"
-        component={DashboardScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View
@@ -82,7 +131,7 @@ export default function MainTabNavigator() {
       />
       <Tab.Screen
         name="GROWTH"
-        component={ReferralsScreen}
+        component={GrowthStackNavigator}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View
@@ -103,7 +152,7 @@ export default function MainTabNavigator() {
       />
       <Tab.Screen
         name="PROFILE"
-        component={ProfileScreen}
+        component={ProfileStackNavigator}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View
@@ -126,7 +175,7 @@ export default function MainTabNavigator() {
       {user?.is_admin === true && (
         <Tab.Screen
           name="ADMIN"
-          component={AdminScreen}
+          component={AdminStackNavigator}
           options={{
             tabBarIcon: ({ color, focused }) => (
               <View
