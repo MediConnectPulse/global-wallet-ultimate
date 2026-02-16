@@ -6,7 +6,22 @@ import { Typography } from "@/constants/theme";
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: "h1" | "h2" | "h3" | "h4" | "body" | "small" | "link";
+  type?:
+    | "display"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "body"
+    | "bodyMedium"
+    | "bodyBold"
+    | "small"
+    | "smallMedium"
+    | "caption"
+    | "captionMedium"
+    | "tiny"
+    | "link";
 };
 
 export function ThemedText({
@@ -36,6 +51,8 @@ export function ThemedText({
 
   const getTypeStyle = () => {
     switch (type) {
+      case "display":
+        return Typography.display;
       case "h1":
         return Typography.h1;
       case "h2":
@@ -44,10 +61,24 @@ export function ThemedText({
         return Typography.h3;
       case "h4":
         return Typography.h4;
+      case "h5":
+        return Typography.h5;
       case "body":
         return Typography.body;
+      case "bodyMedium":
+        return Typography.bodyMedium;
+      case "bodyBold":
+        return Typography.bodyBold;
       case "small":
         return Typography.small;
+      case "smallMedium":
+        return Typography.smallMedium;
+      case "caption":
+        return Typography.caption;
+      case "captionMedium":
+        return Typography.captionMedium;
+      case "tiny":
+        return Typography.tiny;
       case "link":
         return Typography.link;
       default:

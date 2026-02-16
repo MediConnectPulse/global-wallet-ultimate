@@ -1,15 +1,32 @@
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp, ActivityIndicator } from "react-native";
+import {
+  StyleSheet,
+  Pressable,
+  ViewStyle,
+  StyleProp,
+  ActivityIndicator,
+  View,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Feather } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withSequence,
   WithSpringConfig,
 } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
-import { Colors, BorderRadius, Spacing, Shadows } from "@/constants/theme";
+import {
+  Colors,
+  BorderRadius,
+  Spacing,
+  Shadows,
+  SpringConfigs,
+  Gradients,
+} from "@/constants/theme";
 
 interface GoldButtonProps {
   onPress?: () => void;
@@ -18,14 +35,9 @@ interface GoldButtonProps {
   disabled?: boolean;
   loading?: boolean;
   variant?: "primary" | "secondary" | "outline";
+  icon?: keyof typeof Feather.glyphMap;
+  iconPosition?: "left" | "right";
 }
-
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -36,24 +48,91 @@ export function GoldButton({
   disabled = false,
   loading = false,
   variant = "primary",
+  icon,
+  iconPosition = "left",
 }: GoldButtonProps) {
   const scale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
   const handlePressIn = () => {
     if (!disabled && !loading) {
-      scale.value = withSpring(0.96, springConfig);
+      scale.value = withSpring(0.95, SpringConfigs.snappy);
+      glowOpacity.value = withSequence(
+        withSpring(0.8, SpringConfigs.snappy),
+        withSpring(0, SpringConfigs.gentle),
+      );
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, springConfig);
+    scale.value = withSpring(1, SpringConfigs.gentle);
   };
 
   const isDisabled = disabled || loading;
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <ActivityIndicator
+          color={
+            variant === "primary"
+              ? Colors.dark.textInverse
+              : Colors.dark.electricGold
+          }
+        />
+      );
+    }
+
+    return (
+      <View style={styles.contentRow}>
+        {icon && iconPosition === "left" && (
+          <Feather
+            name={icon}
+            size={20}
+            color={
+              variant === "primary"
+                ? Colors.dark.textInverse
+                : Colors.dark.electricGold
+            }
+            style={styles.iconLeft}
+          />
+        )}
+        <ThemedText
+          type="bodyMedium"
+          style={[
+            variant === "primary"
+              ? styles.buttonText
+              : variant === "outline"
+                ? styles.outlineButtonText
+                : styles.secondaryButtonText,
+          ]}
+        >
+          {children}
+        </ThemedText>
+        {icon && iconPosition === "right" && (
+          <Feather
+            name={icon}
+            size={20}
+            color={
+              variant === "primary"
+                ? Colors.dark.textInverse
+                : Colors.dark.electricGold
+            }
+            style={styles.iconRight}
+          />
+        )}
+      </View>
+    );
+  };
 
   if (variant === "outline") {
     return (
@@ -70,13 +149,7 @@ export function GoldButton({
           animatedStyle,
         ]}
       >
-        {loading ? (
-          <ActivityIndicator color={Colors.dark.gold} />
-        ) : (
-          <ThemedText type="body" style={styles.outlineButtonText}>
-            {children}
-          </ThemedText>
-        )}
+        {renderContent()}
       </AnimatedPressable>
     );
   }
@@ -96,13 +169,7 @@ export function GoldButton({
           animatedStyle,
         ]}
       >
-        {loading ? (
-          <ActivityIndicator color={Colors.dark.text} />
-        ) : (
-          <ThemedText type="body" style={styles.secondaryButtonText}>
-            {children}
-          </ThemedText>
-        )}
+        {renderContent()}
       </AnimatedPressable>
     );
   }
@@ -116,24 +183,25 @@ export function GoldButton({
       style={[
         styles.button,
         { opacity: isDisabled ? 0.5 : 1 },
-        Shadows.gold,
         style,
         animatedStyle,
       ]}
     >
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          styles.glow,
+          Shadows.goldGlow,
+          glowAnimatedStyle,
+        ]}
+      />
       <LinearGradient
-        colors={["#FFD700", "#D4AF37"]}
+        colors={Gradients.gold}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        {loading ? (
-          <ActivityIndicator color={Colors.dark.textInverse} />
-        ) : (
-          <ThemedText type="body" style={styles.buttonText}>
-            {children}
-          </ThemedText>
-        )}
+        {renderContent()}
       </LinearGradient>
     </AnimatedPressable>
   );
@@ -151,6 +219,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
   },
+  glow: {
+    borderRadius: BorderRadius.lg,
+  },
+  contentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconLeft: {
+    marginRight: Spacing.sm,
+  },
+  iconRight: {
+    marginLeft: Spacing.sm,
+  },
   buttonText: {
     color: Colors.dark.textInverse,
     fontWeight: "700",
@@ -158,22 +240,24 @@ const styles = StyleSheet.create({
   },
   outlineButton: {
     borderWidth: 2,
-    borderColor: Colors.dark.gold,
+    borderColor: Colors.dark.electricGold,
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
   },
   outlineButtonText: {
-    color: Colors.dark.gold,
+    color: Colors.dark.electricGold,
     fontWeight: "600",
     fontSize: 16,
   },
   secondaryButton: {
-    backgroundColor: Colors.dark.backgroundDefault,
+    backgroundColor: Colors.dark.backgroundPrimary,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.dark.borderMuted,
   },
   secondaryButtonText: {
     color: Colors.dark.text,
