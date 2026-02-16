@@ -30,19 +30,19 @@ export function FloatingActionButton({ onPress }: FloatingActionButtonProps) {
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
-      true
+      true,
     );
 
     glowOpacity.value = withRepeat(
       withSequence(
         withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.3, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+        withTiming(0.3, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
-      true
+      true,
     );
   }, []);
 
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.dark.gold,
+    backgroundColor: Colors.dark.electricGold,
     left: -4,
     top: -4,
   },

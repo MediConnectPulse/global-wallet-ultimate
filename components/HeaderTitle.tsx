@@ -35,6 +35,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: Colors.dark.gold,
+    color: Colors.dark.electricGold,
   },
 });

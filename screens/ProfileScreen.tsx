@@ -1,173 +1,517 @@
 import React, { useState } from "react";
-import { StyleSheet, View, Text, ScrollView, Pressable, Alert, TextInput } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ScrollView,
+  Pressable,
+  Alert,
+  TextInput,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
+import { GlassCard } from "@/components/GlassCard";
+import { StatCard } from "@/components/StatCard";
+import { GoldButton } from "@/components/GoldButton";
+import { ThemedText } from "@/components/ThemedText";
+import { Colors, Spacing, BorderRadius, Gradients } from "@/constants/theme";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, setUser, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  
-  // FORM STATE
+
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
     age: String(user?.age || ""),
     gender: user?.gender || "",
     bank_name: user?.bank_name || "",
     account_holder_name: user?.account_holder_name || "",
-    ifsc_code: user?.ifsc_code || ""
+    ifsc_code: user?.ifsc_code || "",
   });
 
-  const handleUpdateProtocol = async () => {
-    if (!isEditing) {
-      setIsEditing(true);
-      return;
-    }
-
-    // SAVE TO SUPABASE
-    const { error } = await supabase.from('users').update({
-      full_name: formData.full_name,
-      age: parseInt(formData.age) || 0,
-      gender: formData.gender,
-      bank_name: formData.bank_name,
-      account_holder_name: formData.account_holder_name,
-      ifsc_code: formData.ifsc_code
-    }).eq('id', user.id);
+  const handleSaveProfile = async () => {
+    const { error } = await supabase
+      .from("users")
+      .update({
+        full_name: formData.full_name,
+        age: parseInt(formData.age) || 0,
+        gender: formData.gender,
+        bank_name: formData.bank_name,
+        account_holder_name: formData.account_holder_name,
+        ifsc_code: formData.ifsc_code,
+      })
+      .eq("id", user.id);
 
     if (!error) {
-      Alert.alert("Dignity Restored", "Your Profile Data has been updated in the vault.");
+      Alert.alert("Success", "Your profile has been updated successfully.");
       setIsEditing(false);
-      // Refresh local session
-      const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
+      const { data } = await supabase.from("users").select("*").eq("id", user.id).single();
       if (data) setUser(data);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
-      Alert.alert("System Error", "Update failed. Check connection.");
+      Alert.alert("Error", "Failed to update profile. Please try again.");
     }
   };
 
-  // MOTIVATIONAL CALCULATION
-  const totalLifetimeEarnings = (user?.wallet_balance || 0) + (user?.total_withdrawn || 0);
+  const handleWithdrawal = () => {
+    if (user?.wallet_balance < 500) {
+      Alert.alert(
+        "Insufficient Balance",
+        "Minimum withdrawal amount is ₹500. Keep earning to reach the threshold!"
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Withdrawal Request",
+      `Request to withdraw ₹${user?.wallet_balance}?\n\nAdmin will verify your bank details and process the payment.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm",
+          onPress: () => {
+            Alert.alert("Request Submitted", "Your withdrawal request has been sent to admin for processing.");
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const totalLifetimeEarnings =
+    (user?.wallet_balance || 0) + (user?.total_withdrawn || 0);
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#0F0C29', '#302b63', '#24243e']} style={StyleSheet.absoluteFill} />
-      
-      <ScrollView contentContainerStyle={{ paddingBottom: 120, paddingTop: insets.top + 20 }}>
-        
-        {/* 1. IDENTITY HEADER */}
-        <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.full_name?.charAt(0) || "U"}</Text>
-          </View>
-          <Text style={styles.userName}>{user?.full_name?.toUpperCase()}</Text>
-          <Text style={styles.userMobile}>{user?.mobile_number}</Text>
-        </View>
+      <LinearGradient colors={Gradients.dark} style={StyleSheet.absoluteFill} />
 
-        {/* 2. MOTIVATIONAL WEALTH CARD */}
-        <LinearGradient colors={['#B8860B', '#806000']} style={styles.motivationCard}>
-          <Feather name="trending-up" size={20} color="white" style={styles.trendIcon} />
-          <Text style={styles.mLabel}>TOTAL WEALTH GENERATED</Text>
-          <Text style={styles.mVal}>₹{totalLifetimeEarnings.toLocaleString('en-IN')}</Text>
-          <Text style={styles.mSub}>Success tracking since {new Date(user?.created_at).toLocaleDateString()}</Text>
-        </LinearGradient>
-
-        {/* 3. WITHDRAWAL HUB */}
-        <View style={styles.withdrawSection}>
-          <Text style={styles.sectionTitle}>💰 WITHDRAWAL HUB</Text>
-          <View style={styles.walletRow}>
-             <View>
-                <Text style={styles.wLabel}>AVAILABLE</Text>
-                <Text style={styles.wVal}>₹{user?.wallet_balance || 0}</Text>
-             </View>
-             <Pressable style={[styles.withdrawBtn, {opacity: user?.wallet_balance < 500 ? 0.4 : 1}]} 
-                        onPress={() => Alert.alert("Request Sent", "Admin will verify bank details below.")}>
-                <Text style={styles.withdrawText}>PAYOUT</Text>
-             </Pressable>
-          </View>
-        </View>
-
-        {/* 4. DATA VAULT (EDITABLE) */}
-        <View style={styles.vaultContainer}>
-          <Text style={styles.sectionTitle}>📋 PERSONAL & BANKING DATA</Text>
-          
-          <InputGroup label="FULL NAME" value={formData.full_name} isEditing={isEditing} onChange={(t) => setForm({...formData, full_name: t})} />
-          
-          <View style={{flexDirection: 'row', gap: 15}}>
-             <InputGroup label="AGE" value={formData.age} isEditing={isEditing} onChange={(t) => setFormData({...formData, age: t})} half />
-             <InputGroup label="GENDER" value={formData.gender} isEditing={isEditing} onChange={(t) => setFormData({...formData, gender: t})} half />
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: 120, paddingTop: insets.top + 20 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <LinearGradient
+              colors={Gradients.gold}
+              style={styles.avatar}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <ThemedText type="h1" style={styles.avatarText}>
+                {user?.full_name?.charAt(0).toUpperCase() || "U"}
+              </ThemedText>
+            </LinearGradient>
+            <ThemedText type="h3" style={styles.userName}>
+              {user?.full_name?.toUpperCase()}
+            </ThemedText>
+            <View style={styles.phoneContainer}>
+              <Feather name="phone" size={14} color={Colors.dark.textSecondary} />
+              <ThemedText type="small" style={styles.userMobile}>
+                +91 {user?.mobile_number}
+              </ThemedText>
+            </View>
+            {user?.subscription_status === "premium" && (
+              <View style={styles.premiumBadge}>
+                <Feather name="star" size={12} color={Colors.dark.electricGold} />
+                <ThemedText type="caption" style={styles.premiumText}>
+                  PREMIUM MEMBER
+                </ThemedText>
+              </View>
+            )}
           </View>
 
-          <InputGroup label="BANK NAME" value={formData.bank_name} isEditing={isEditing} onChange={(t) => setFormData({...formData, bank_name: t})} />
-          <InputGroup label="ACCOUNT HOLDER" value={formData.account_holder_name} isEditing={isEditing} onChange={(t) => setFormData({...formData, account_holder_name: t})} />
-          <InputGroup label="IFSC CODE" value={formData.ifsc_code} isEditing={isEditing} onChange={(t) => setFormData({...formData, ifsc_code: t})} />
+          <StatCard
+            title="Lifetime Earnings"
+            value={`₹${totalLifetimeEarnings.toLocaleString("en-IN")}`}
+            subtitle={`Member since ${new Date(user?.created_at).toLocaleDateString("en-IN", {
+              month: "short",
+              year: "numeric",
+            })}`}
+            icon="trending-up"
+            trend="up"
+            trendValue="+25%"
+            variant="gradient"
+            gradientColors={["#B8860B", "#806000", "#5A4600"]}
+            style={styles.earningsCard}
+          />
 
-          <View style={styles.recoveryBox}>
-            <Text style={styles.rLabel}>RECOVERY KEY (PRIVATE)</Text>
-            <Text style={styles.rVal}>{user?.recovery_key}</Text>
+          <GlassCard style={styles.withdrawalCard} variant="medium">
+            <View style={styles.withdrawalHeader}>
+              <View>
+                <ThemedText type="caption" style={styles.withdrawalLabel}>
+                  WALLET BALANCE
+                </ThemedText>
+                <ThemedText type="h2" style={styles.withdrawalAmount}>
+                  ₹{user?.wallet_balance || 0}
+                </ThemedText>
+                <ThemedText type="caption" style={styles.withdrawalSubtext}>
+                  Min. withdrawal: ₹500
+                </ThemedText>
+              </View>
+              <GoldButton
+                onPress={handleWithdrawal}
+                icon="download"
+                disabled={user?.wallet_balance < 500}
+                variant="primary"
+                style={styles.withdrawButton}
+              >
+                Withdraw
+              </GoldButton>
+            </View>
+          </GlassCard>
+
+          <View style={styles.sectionHeader}>
+            <ThemedText type="h5" style={styles.sectionTitle}>
+              Personal Information
+            </ThemedText>
+            <Pressable
+              onPress={() => {
+                if (isEditing) {
+                  handleSaveProfile();
+                } else {
+                  setIsEditing(true);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              }}
+            >
+              <Feather
+                name={isEditing ? "save" : "edit-3"}
+                size={20}
+                color={Colors.dark.electricGold}
+              />
+            </Pressable>
           </View>
-        </View>
 
-        {/* 5. THE MASTER BUTTON */}
-        <Pressable style={[styles.masterBtn, isEditing && {backgroundColor: '#00FF00'}]} onPress={handleUpdateProtocol}>
-          <Feather name={isEditing ? "save" : "edit-3"} size={20} color="black" />
-          <Text style={styles.masterBtnText}>{isEditing ? "SAVE TO VAULT" : "UPDATE PROFILE DATA"}</Text>
-        </Pressable>
+          <GlassCard style={styles.infoCard} variant="medium">
+            <InfoField
+              label="Full Name"
+              value={formData.full_name}
+              isEditing={isEditing}
+              onChange={(text) => setFormData({ ...formData, full_name: text })}
+              icon="user"
+            />
+            <View style={styles.row}>
+              <InfoField
+                label="Age"
+                value={formData.age}
+                isEditing={isEditing}
+                onChange={(text) => setFormData({ ...formData, age: text })}
+                icon="calendar"
+                keyboardType="numeric"
+                style={styles.halfField}
+              />
+              <InfoField
+                label="Gender"
+                value={formData.gender}
+                isEditing={isEditing}
+                onChange={(text) => setFormData({ ...formData, gender: text })}
+                icon="users"
+                style={styles.halfField}
+              />
+            </View>
+          </GlassCard>
 
-        <Pressable onPress={logout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Logout from Session</Text>
-        </Pressable>
+          <ThemedText type="h5" style={styles.sectionTitle}>
+            Banking Details
+          </ThemedText>
 
-      </ScrollView>
+          <GlassCard style={styles.infoCard} variant="medium">
+            <InfoField
+              label="Bank Name"
+              value={formData.bank_name}
+              isEditing={isEditing}
+              onChange={(text) => setFormData({ ...formData, bank_name: text })}
+              icon="home"
+            />
+            <InfoField
+              label="Account Holder Name"
+              value={formData.account_holder_name}
+              isEditing={isEditing}
+              onChange={(text) =>
+                setFormData({ ...formData, account_holder_name: text })
+              }
+              icon="user-check"
+            />
+            <InfoField
+              label="IFSC Code"
+              value={formData.ifsc_code}
+              isEditing={isEditing}
+              onChange={(text) =>
+                setFormData({ ...formData, ifsc_code: text.toUpperCase() })
+              }
+              icon="key"
+              autoCapitalize="characters"
+            />
+          </GlassCard>
+
+          <GlassCard style={styles.recoveryCard} variant="strong">
+            <Feather
+              name="shield"
+              size={24}
+              color={Colors.dark.electricGold}
+              style={styles.recoveryIcon}
+            />
+            <ThemedText type="caption" style={styles.recoveryLabel}>
+              RECOVERY KEY
+            </ThemedText>
+            <ThemedText type="h3" style={styles.recoveryKey}>
+              {user?.recovery_key}
+            </ThemedText>
+            <ThemedText type="caption" style={styles.recoveryWarning}>
+              Keep this key safe. It cannot be retrieved if lost.
+            </ThemedText>
+          </GlassCard>
+
+          {isEditing && (
+            <GoldButton
+              onPress={handleSaveProfile}
+              icon="check-circle"
+              style={styles.saveButton}
+            >
+              Save Changes
+            </GoldButton>
+          )}
+
+          <Pressable onPress={logout} style={styles.logoutButton}>
+            <Feather name="log-out" size={16} color={Colors.dark.errorRed} />
+            <ThemedText type="small" style={styles.logoutText}>
+              Logout from Session
+            </ThemedText>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
 
-// --- UI HELPER: EDITABLE ROW ---
-function InputGroup({ label, value, isEditing, onChange, half }: any) {
-    return (
-        <View style={[styles.inputGroup, half && {flex: 1}]}>
-            <Text style={styles.inputLabel}>{label}</Text>
-            {isEditing ? (
-                <TextInput style={styles.inputField} value={value} onChangeText={onChange} placeholder="Enter..." placeholderTextColor="#555" />
-            ) : (
-                <Text style={styles.inputText}>{value || "---"}</Text>
-            )}
-        </View>
-    );
+interface InfoFieldProps {
+  label: string;
+  value: string;
+  isEditing: boolean;
+  onChange: (text: string) => void;
+  icon?: keyof typeof Feather.glyphMap;
+  keyboardType?: "default" | "numeric";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  style?: any;
+}
+
+function InfoField({
+  label,
+  value,
+  isEditing,
+  onChange,
+  icon,
+  keyboardType = "default",
+  autoCapitalize = "sentences",
+  style,
+}: InfoFieldProps) {
+  return (
+    <View style={[styles.infoField, style]}>
+      <View style={styles.infoFieldHeader}>
+        {icon && (
+          <Feather name={icon} size={16} color={Colors.dark.textSecondary} />
+        )}
+        <ThemedText type="caption" style={styles.fieldLabel}>
+          {label.toUpperCase()}
+        </ThemedText>
+      </View>
+      {isEditing ? (
+        <TextInput
+          style={styles.fieldInput}
+          value={value}
+          onChangeText={onChange}
+          placeholder={`Enter ${label.toLowerCase()}...`}
+          placeholderTextColor={Colors.dark.textTertiary}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+        />
+      ) : (
+        <ThemedText type="bodyMedium" style={styles.fieldValue}>
+          {value || "---"}
+        </ThemedText>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { alignItems: 'center', marginBottom: 25 },
-  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#FFD700', justifyContent: 'center', alignItems: 'center', elevation: 10 },
-  avatarText: { fontSize: 28, fontWeight: 'bold', color: '#0A192F' },
-  userName: { color: 'white', fontSize: 18, fontWeight: '900', marginTop: 10, letterSpacing: 1 },
-  userMobile: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
-  motivationCard: { marginHorizontal: 20, borderRadius: 25, padding: 20, alignItems: 'center', marginBottom: 25, elevation: 5 },
-  trendIcon: { position: 'absolute', right: 20, top: 20, opacity: 0.5 },
-  mLabel: { color: 'white', fontSize: 9, fontWeight: 'bold', opacity: 0.8 },
-  mVal: { color: 'white', fontSize: 32, fontWeight: '900', marginVertical: 5 },
-  mSub: { color: 'white', fontSize: 8, opacity: 0.6 },
-  withdrawSection: { backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: 20, padding: 20, borderRadius: 20, marginBottom: 20 },
-  sectionTitle: { color: '#FFD700', fontSize: 10, fontWeight: 'bold', marginBottom: 15, opacity: 0.7 },
-  walletRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  wLabel: { color: 'white', fontSize: 8, opacity: 0.5 },
-  wVal: { color: '#00FF00', fontSize: 24, fontWeight: 'bold' },
-  withdrawBtn: { backgroundColor: '#FFD700', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 10 },
-  withdrawText: { color: 'black', fontSize: 10, fontWeight: '900' },
-  vaultContainer: { backgroundColor: 'rgba(255,255,255,0.03)', marginHorizontal: 20, padding: 20, borderRadius: 25, borderWidth: 1, borderColor: 'rgba(255,215,0,0.1)' },
-  inputGroup: { marginBottom: 18 },
-  inputLabel: { color: 'white', opacity: 0.4, fontSize: 8, fontWeight: 'bold', marginBottom: 5 },
-  inputText: { color: 'white', fontSize: 15, fontWeight: '600' },
-  inputField: { color: '#FFD700', fontSize: 15, borderBottomWidth: 1, borderBottomColor: '#FFD700', paddingVertical: 2 },
-  recoveryBox: { marginTop: 10, padding: 15, backgroundColor: 'rgba(255,215,0,0.05)', borderRadius: 12, alignItems: 'center' },
-  rLabel: { color: '#FFD700', fontSize: 8, fontWeight: 'bold' },
-  rVal: { color: '#FFD700', fontSize: 20, fontWeight: 'bold', letterSpacing: 3, marginTop: 5 },
-  masterBtn: { backgroundColor: '#FFD700', marginHorizontal: 20, padding: 18, borderRadius: 20, marginTop: 25, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, elevation: 8 },
-  masterBtnText: { color: 'black', fontWeight: '900', fontSize: 14 },
-  logoutBtn: { marginTop: 30, alignItems: 'center' },
-  logoutText: { color: '#FF4444', fontSize: 11, fontWeight: 'bold', opacity: 0.7 }
+  container: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: Spacing["3xl"],
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+    shadowColor: Colors.dark.electricGold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  avatarText: {
+    color: Colors.dark.textInverse,
+    fontWeight: "900",
+  },
+  userName: {
+    color: Colors.dark.text,
+    marginBottom: Spacing.xs,
+    textAlign: "center",
+  },
+  phoneContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  userMobile: {
+    color: Colors.dark.textSecondary,
+  },
+  premiumBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    backgroundColor: `${Colors.dark.electricGold}20`,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.dark.electricGold,
+  },
+  premiumText: {
+    color: Colors.dark.electricGold,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  earningsCard: {
+    marginBottom: Spacing.xl,
+  },
+  withdrawalCard: {
+    marginBottom: Spacing["3xl"],
+  },
+  withdrawalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  withdrawalLabel: {
+    color: Colors.dark.textSecondary,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
+  },
+  withdrawalAmount: {
+    color: Colors.dark.successGreen,
+    fontWeight: "900",
+    marginBottom: Spacing.xs,
+  },
+  withdrawalSubtext: {
+    color: Colors.dark.textTertiary,
+  },
+  withdrawButton: {
+    paddingHorizontal: Spacing["2xl"],
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    color: Colors.dark.text,
+  },
+  infoCard: {
+    marginBottom: Spacing.xl,
+  },
+  row: {
+    flexDirection: "row",
+    gap: Spacing.lg,
+  },
+  halfField: {
+    flex: 1,
+  },
+  infoField: {
+    marginBottom: Spacing.lg,
+  },
+  infoFieldHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  fieldLabel: {
+    color: Colors.dark.textSecondary,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  fieldValue: {
+    color: Colors.dark.text,
+  },
+  fieldInput: {
+    color: Colors.dark.electricGold,
+    fontSize: 16,
+    fontWeight: "600",
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.dark.electricGold,
+    paddingVertical: Spacing.xs,
+  },
+  recoveryCard: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  recoveryIcon: {
+    marginBottom: Spacing.lg,
+  },
+  recoveryLabel: {
+    color: Colors.dark.textSecondary,
+    fontWeight: "700",
+    letterSpacing: 1,
+    marginBottom: Spacing.md,
+  },
+  recoveryKey: {
+    color: Colors.dark.electricGold,
+    fontWeight: "900",
+    letterSpacing: 4,
+    textAlign: "center",
+    marginBottom: Spacing.md,
+  },
+  recoveryWarning: {
+    color: Colors.dark.errorRed,
+    textAlign: "center",
+  },
+  saveButton: {
+    marginBottom: Spacing.xl,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  logoutText: {
+    color: Colors.dark.errorRed,
+    fontWeight: "600",
+  },
 });

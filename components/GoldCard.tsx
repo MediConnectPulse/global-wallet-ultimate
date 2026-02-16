@@ -1,5 +1,11 @@
 import React from "react";
-import { StyleSheet, View, ViewStyle, StyleProp, Pressable } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ViewStyle,
+  StyleProp,
+  Pressable,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
@@ -18,7 +24,12 @@ interface GoldCardProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function GoldCard({ children, style, variant = "navy", onPress }: GoldCardProps) {
+export function GoldCard({
+  children,
+  style,
+  variant = "navy",
+  onPress,
+}: GoldCardProps) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -84,7 +95,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   navyCard: {
-    backgroundColor: Colors.dark.backgroundDefault,
+    backgroundColor: Colors.dark.backgroundPrimary,
     borderWidth: 1,
     borderColor: Colors.dark.borderMuted,
   },

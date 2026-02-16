@@ -69,7 +69,7 @@ export default function App() {
 const styles = StyleSheet.create({
   gate: { 
     flex: 1, 
-    backgroundColor: '#0A192F', // Executive Navy
+    backgroundColor: '#0D1B2A', // Deep Space Blue
     justifyContent: 'center', 
     alignItems: 'center' 
   }

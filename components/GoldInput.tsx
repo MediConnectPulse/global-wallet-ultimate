@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, TextInputProps, Pressable } from "react-native";
+import {
+  StyleSheet,
+  View,
+  TextInput,
+  TextInputProps,
+  Pressable,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -82,7 +88,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.dark.backgroundDefault,
+    backgroundColor: Colors.dark.backgroundPrimary,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.dark.borderMuted,
@@ -90,11 +96,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   inputFocused: {
-    borderColor: Colors.dark.gold,
+    borderColor: Colors.dark.electricGold,
     borderWidth: 2,
   },
   inputError: {
-    borderColor: Colors.dark.error,
+    borderColor: Colors.dark.errorRed,
   },
   prefix: {
     color: Colors.dark.text,
@@ -111,7 +117,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   error: {
-    color: Colors.dark.error,
+    color: Colors.dark.errorRed,
     marginTop: Spacing.xs,
     marginLeft: Spacing.xs,
   },
