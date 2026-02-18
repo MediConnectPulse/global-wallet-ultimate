@@ -1,3 +1,10 @@
+import 'react-native-url-polyfill/auto';
+import { Buffer } from 'buffer';
+
+// This fix ensures Supabase works on Android APKs
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = Buffer;
+}
 import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, StyleSheet, LogBox, StatusBar } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";

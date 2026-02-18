@@ -1,19 +1,13 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
+﻿import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-/**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
- * @returns {string} The API base URL
- */
 export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
-
+  const host = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_DOMAIN;
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    // Providing a warning instead of a hard crash for better debugging
+    console.warn("API URL not set!");
+    return "https://localhost:5000"; 
   }
-
-  let url = new URL(`https://${host}`);
-
-  return url.href;
+  return host.startsWith("http") ? host : `https://${host}`;
 }
 
 async function throwIfResNotOk(res: Response) {
@@ -26,39 +20,29 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   route: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<Response> {
   const baseUrl = getApiUrl();
   const url = new URL(route, baseUrl);
-
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
-
   await throwIfResNotOk(res);
   return res;
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
+export const getQueryFn: <T>(options: { on401: "returnNull" | "throw" }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const baseUrl = getApiUrl();
-    const url = new URL(queryKey.join("/") as string, baseUrl);
-
-    const res = await fetch(url, {
-      credentials: "include",
-    });
-
+    const url = new URL(queryKey.join("/"), baseUrl);
+    const res = await fetch(url, { credentials: "include" });
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      return null as any;
     }
-
     await throwIfResNotOk(res);
     return await res.json();
   };
@@ -72,8 +56,6 @@ export const queryClient = new QueryClient({
       staleTime: Infinity,
       retry: false,
     },
-    mutations: {
-      retry: false,
-    },
+    mutations: { retry: false },
   },
 });

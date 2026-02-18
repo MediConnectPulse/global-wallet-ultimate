@@ -3,6 +3,7 @@
     "name": "Global Wallet",
     "slug": "global-wallet",
     "version": "1.0.0",
+    "owner": "doc_sunny",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "globalwallet",
@@ -10,16 +11,15 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.globalwallet.app"
+      "bundleIdentifier": "com.xpenseup.globalwallet"
     },
     "android": {
+      "package": "com.xpenseup.globalwallet",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0D1B2A",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "package": "com.globalwallet.app",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
@@ -30,37 +30,10 @@
         "RECEIVE_BOOT_COMPLETED"
       ]
     },
-    "web": {
-      "output": "single",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#0D1B2A",
-          "dark": {
-            "backgroundColor": "#0D1B2A",
-            "image": "./assets/images/splash-icon.png"
-          }
-        }
-      ],
-      "expo-web-browser",
-      "expo-font"
-    ],
-    "experiments": {
-      "reactCompiler": true
-    },
     "extra": {
       "eas": {
         "projectId": "66c90f84-a3d3-4918-92a9-6145e47e6de8"
-      },
-      "SUPABASE_URL": "${SUPABASE_URL}",
-      "SUPABASE_KEY": "${SUPABASE_KEY}"
-    },
-    "owner": "globalwallet"
+      }
+    }
   }
 }

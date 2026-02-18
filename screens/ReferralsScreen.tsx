@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, Text, FlatList, Pressable, Alert, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import * as Share from "expo-share";
+import * as Share from "expo-sharing";
 import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
@@ -207,7 +207,7 @@ export default function ReferralsScreen() {
                 />
                 <StatCard
                   title="Total Earnings"
-                  value={`₹${totalEarnings.toLocaleString("en-IN")}`}
+                  value={`â‚¹${totalEarnings.toLocaleString("en-IN")}`}
                   subtitle="From referrals"
                   icon="trending-up"
                   trend="up"
@@ -496,3 +496,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+
+
+

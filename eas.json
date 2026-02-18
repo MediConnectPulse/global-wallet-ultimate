@@ -1,4 +1,7 @@
 {
+  "cli": {
+    "appVersionSource": "remote"
+  },
   "build": {
     "development": {
       "developmentClient": true,
@@ -20,7 +23,8 @@
     "production": {
       "distribution": "store",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "autoIncrement": true
       },
       "env": {
         "SUPABASE_URL": "${SUPABASE_URL}",
@@ -28,9 +32,6 @@
         "API_URL": "${API_URL}",
         "ADMIN_MOBILE": "${ADMIN_MOBILE}",
         "NODE_ENV": "production"
-      },
-      "android": {
-        "autoIncrement": true
       }
     }
   },
